@@ -1,7 +1,6 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const db = require('./db/connection');
-// const router = express.Router();
 
 
 const promptUser = () => {
@@ -26,8 +25,6 @@ const promptUser = () => {
                     });
                     break;
                 case 'View all roles':
-                    // const sql2 = `SELECT * FROM roles`;
-                    // working on adding the name of the department instead of the id
                     const sql2 = `SELECT roles.id, roles.title, roles.salary, department.department_name
                     FROM roles
                     LEFT JOIN department
@@ -41,16 +38,6 @@ const promptUser = () => {
                     });
                     break;
                 case 'View all employees':
-                    // const sql3 = `SELECT * FROM employee`;
-                    // const sql3 = `SELECT employee.*, roles.title, department.department_name
-                    // FROM employee
-                    // LEFT JOIN roles ON employee.roles_id = roles.id
-                    // LEFT JOIN department ON roles.department_id = department.department_name`
-                    // const sql3 = `SELECT employee.*, roles.title, roles.salary, department.department_name, CONCAT (manager.first_name, " ", manager.last_name) AS manager 
-                    // FROM employee
-                    // LEFT JOIN roles ON employee.roles_id = roles.id
-                    // LEFT JOIN department ON roles.department_id = department.id
-                    // LEFT JOIN employee manager ON employee.manager_id = manager.id`
                     const sql3 = `SELECT employee.id, employee.first_name, employee.last_name, employee.email, roles.title, roles.salary, department.department_name, CONCAT (manager.first_name, " ", manager.last_name) AS manager 
                     FROM employee
                     LEFT JOIN roles ON employee.roles_id = roles.id
@@ -99,16 +86,13 @@ const promptUser = () => {
                         }
                     ])
                     .then(async answer => {
-                        // is this where i would want to use the a Role() constructor
                         const [rows] = await loadDept();
-                        console.log(rows)
 
                         const departmentsArr= rows.map(department => ({
                             name: department.department_name,
                             value: department.id
                         }));
 
-                        console.log(departmentsArr)
                         inquirer.prompt(
                             {
                                 message: 'What department do they belong to?',
@@ -128,16 +112,6 @@ const promptUser = () => {
                                 beginApp();
                             })
                         })
-                
-                        // const sql4 = `INSERT INTO roles (title)
-                        // VALUES (?)`;
-                        // const params = answer.name;
-                        // db.query(sql, params, (err) => {
-                        //     if (err) {
-                        //         throw err;
-                        //     }
-                        //     console.log('New role added!')
-                        // })
                     })
                     break;
                 case 'Add employee':
@@ -166,7 +140,6 @@ const promptUser = () => {
                             name: roles.title,
                             value: roles.id
                         }))
-                        // console.log(rolesArr);
                         inquirer.prompt(
                             {
                                 message: 'What is their role?',
@@ -176,7 +149,6 @@ const promptUser = () => {
                             }
                         ).then(async answer => {
                             const [rows] = await loadManager();
-                            console.log(rows);
                             const managerArr = rows.map(manager => ({
                                 name: manager.first_name,
                                 value: manager.id
@@ -191,12 +163,7 @@ const promptUser = () => {
                             ).then(manAns => {
                                 const sql = `INSERT INTO employee (first_name, last_name, email, roles_id, manager_id)
                                 VALUES (?, ?, ?, ?, ?)`;
-                                // console.log(rolesArr);
-                                // console.log(managerArr);
-                                // console.log(inquirerRes);
-                                // console.log(answer);
                                 const params = [inquirerRes.first_name, inquirerRes.last_name, inquirerRes.email, answer.roleId, manAns.managerId]
-                                // console.log(params);
                                 db.query(sql, params, (err) => {
                                     if (err) {
                                         throw err;
@@ -206,8 +173,6 @@ const promptUser = () => {
                                 })
                     
                             })
-                            // console.log(rolesArr);
-                            // console.log(managerArr);
                         })
                         
                     })
@@ -236,7 +201,6 @@ const promptUser = () => {
                                     throw err;
                                 }
                                 const roles = rows.map(({title, id}) => ({name: title, value: id}));
-                                console.log(roles);
                                 inquirer.prompt([
                                     {
                                         type: 'list',
@@ -246,7 +210,6 @@ const promptUser = () => {
                                     }
                                 ])
                                 .then(rolesAns => {
-                                    console.log(rolesAns);
                                     const role = rolesAns.new_role;
                                     params.unshift(role);
                                     const sql = `UPDATE employee
@@ -273,14 +236,17 @@ const promptUser = () => {
 
     beginApp();
 };
+
+// gets all departments
 function loadDept () {
     return db.promise().query("SELECT * FROM department")
 }
 
+// Gets all roles
 function loadRoles() {
     return db.promise().query("SELECT * FROM roles")
 }
-// ??? i have to use some sort of JOIN i believe
+// Gets Manager information based on who has a NULL manager_id, because all managers will have this value be null.
 function loadManager() {
     return db.promise().query("SELECT first_name, last_name, id FROM employee WHERE manager_id IS NULL")
 }
