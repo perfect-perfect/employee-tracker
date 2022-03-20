@@ -58,7 +58,7 @@ const promptUser = () => {
                     LEFT JOIN employee manager ON employee.manager_id = manager.id`
                     db.query(sql3, (err, rows) => {
                         if (err) {
-                        throw err;
+                            throw err;
                         }
                         console.table(rows);
                         beginApp();
@@ -212,7 +212,59 @@ const promptUser = () => {
                         
                     })
                     break;
-                case 'Update employee role'
+                case 'Update employee role':
+                    const sql5 = `SELECT first_name, last_name, id FROM employee`
+                    db.query(sql5, (err, rows) => {
+                        if (err) {
+                            throw err;
+                        }
+                        const employee = rows.map(({first_name, last_name, id}) => ({name: `${first_name} ${last_name}`, value: id}));
+                        inquirer.prompt([
+                            {
+                                type: 'list',
+                                name: 'employee',
+                                message: 'Whose role would you like to update?',
+                                choices: employee
+                            }
+                        ])
+                        .then(employeeAns => {
+                            const employee = employeeAns.employee;
+                            const params = [employee];
+                            const sql = `SELECT title, id FROM roles`;
+                            db.query(sql, (err, rows) => {
+                                if (err) {
+                                    throw err;
+                                }
+                                const roles = rows.map(({title, id}) => ({name: title, value: id}));
+                                console.log(roles);
+                                inquirer.prompt([
+                                    {
+                                        type: 'list',
+                                        name: 'new_role',
+                                        message: 'What is their new role?',
+                                        choices: roles
+                                    }
+                                ])
+                                .then(rolesAns => {
+                                    console.log(rolesAns);
+                                    const role = rolesAns.new_role;
+                                    params.unshift(role);
+                                    const sql = `UPDATE employee
+                                    SET roles_id = ?
+                                    WHERE id = ?`
+                                    db.query(sql, params, (err) => {
+                                        if (err) {
+                                            throw err;
+                                        }
+                                        console.log('Employee has been updated!');
+                                        beginApp();
+                                    })
+                                })
+                            })
+                        })
+                        
+                    })
+                    break;
 
                 
             }
